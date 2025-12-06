@@ -22,6 +22,9 @@ def index():
 def login():
     tg_id = request.args.get("tg_id")
     session["tg_id"] = tg_id
+    tracks = request.args.get("songs")  # stringa tipo "7InzmgtRkwsheHlrUz0VLK,4uLU6hMCjMI75M1A2tKUQC"
+    tracks_list = tracks.split(",")  # ora è una lista Python
+    session["tracks"] = tracks_list
     
     params = {
         "client_id": CLIENT_ID,
@@ -70,7 +73,7 @@ def create_playlists():
     }
 
     data = {
-    "name": "Mood_playlist2",
+    "name": "Mood_playlist",
     "description": "this is your moodplalist",
     "public": False
     }
@@ -97,18 +100,20 @@ def add_songs():
         'Authorization':f"Bearer {session['access_token']}",
         "Content-Type": "application/json"
     }
-
+    songs = session['tracks']
+    songs_final = []
+    number = []
+    for i in songs:
+        songs_final.append(f"spotify:track:{i}")
+        
     data = {
-        "uris": [
-        "spotify:track:7InzmgtRkwsheHlrUz0VLK"
-    ],
-    "position": 0
+        "uris": songs_final,
     }
 
     playlist_id = session['playlist_id']
     response = requests.post(f"{API_BASE_URL}playlists/{playlist_id}/tracks", headers=headers, json=data)
     songs = response.json()
-    return jsonify(songs)
+    return "PLAYLIST COMPLETA"!!
 
 @app.route("/debug")
 def debug():
