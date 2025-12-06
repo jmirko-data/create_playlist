@@ -2,9 +2,10 @@ from flask import Flask, redirect, request, session
 import requests
 import os
 import urllib.parse
+from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "testsecret")
+app.secret_key = os.environ.get("SESSION_SECRET")
 
 CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
