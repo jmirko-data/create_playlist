@@ -1,5 +1,4 @@
 Flask
 requests
 gunicorn
-datetime
-urllib.parse
+python-telegram-bot
