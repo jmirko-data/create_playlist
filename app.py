@@ -109,3 +109,14 @@ def add_songs():
     response = requests.post(f"{API_BASE_URL}playlists/{playlist_id}/tracks", headers=headers, json=data)
     songs = response.json()
     return jsonify(songs)
+
+@app.route("/debug")
+def debug():
+    return {
+        "CLIENT_ID": CLIENT_ID,
+        "CLIENT_SECRET": CLIENT_SECRET,
+        "REDIRECT_URI": REDIRECT_URI,
+        "AUTH_URL": AUTH_URL,
+        "TOKEN_URL": TOKEN_URL
+    }
+
