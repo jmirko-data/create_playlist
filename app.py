@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, session
+from flask import Flask, redirect, request, jsonify, session
 import requests
 import os
 import urllib.parse
