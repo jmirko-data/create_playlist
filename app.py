@@ -1,7 +1,7 @@
 from flask import Flask, redirect, request, session
 import requests
 import os
-from urllib.parse import urlencode
+import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "testsecret")
