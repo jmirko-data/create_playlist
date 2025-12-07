@@ -95,9 +95,15 @@ def create_playlists():
     }
 
     response = requests.post(API_BASE_URL + 'me/playlists', headers=headers, json=data)
-    playlists = response.json()
+    print("STATUS:", response.status_code)
+    print("BODY:", response.text)
+    
+    try:
+        playlists = response.json()
+    except Exception as e:
+        return f"Errore Spotify: {response.status_code} - {response.text}", 400
+    
     USER_SESSIONS[token]["playlist_id"] = playlists['id']
-
     return redirect(f"/songs?token={token}")
 
 
