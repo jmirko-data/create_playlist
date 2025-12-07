@@ -21,10 +21,15 @@ def index():
 @app.route("/login")
 def login():
     tg_id = request.args.get("tg_id")
-    session["tg_id"] = tg_id
     tracks = request.args.get("songs")  # stringa tipo "7InzmgtRkwsheHlrUz0VLK,4uLU6hMCjMI75M1A2tKUQC"
     tracks_list = tracks.split(",")  # ora è una lista Python
-    session["tracks"] = tracks_list
+    token = request.args.get("token")
+
+    session['user_data'] = {
+    "tg_id": tg_id,
+    "tracks": tracks_list,
+    "token": token
+}
     
     params = {
         "client_id": CLIENT_ID,
@@ -73,8 +78,8 @@ def create_playlists():
     }
 
     data = {
-    "name": "Mood_playlist",
-    "description": "this is your moodplalist",
+    "name": "Moody Playlist",
+    "description": "Your ultimate playlist 🎶, handpicked by Mir, Deb & Vit 👋. Press play ▶️ and have a blast! 🎉",
     "public": False
     }
 
@@ -95,16 +100,18 @@ def add_songs():
     
     if 'playlist_id' not in session:
         return "Playlist ID not found. Crea prima la playlist.", 400
+
+     if 'tracks' not in session:
+        return "Tracks non presenti in sessione", 400
     
     headers = {
         'Authorization':f"Bearer {session['access_token']}",
         "Content-Type": "application/json"
     }
-    songs = session['tracks']
-    songs_final = []
-    number = []
-    for i in songs:
-        songs_final.append(f"spotify:track:{i}")
+    
+    user_data = session.get('user_data')
+    songs = user_data['tracks']
+    songs_final = [f"spotify:track:{i}" for i in songs]
         
     data = {
         "uris": songs_final
@@ -112,8 +119,13 @@ def add_songs():
 
     playlist_id = session['playlist_id']
     response = requests.post(f"{API_BASE_URL}playlists/{playlist_id}/tracks", headers=headers, json=data)
-    songs = response.json()
-    return "PLAYLIST COMPLETA"
+    print("STATUS:", response.status_code)
+    print("BODY:", response.text)
+    try:
+        res_json = response.json()
+    except:
+        return f"Errore Spotify (non JSON): {response.status_code}<br>{response.text}", 400
+    return "PLAYLIST COMPLETA, UN BACIO"
 
 @app.route("/debug")
 def debug():
