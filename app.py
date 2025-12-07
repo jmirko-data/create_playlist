@@ -113,7 +113,7 @@ def add_songs():
     playlist_id = session['playlist_id']
     response = requests.post(f"{API_BASE_URL}playlists/{playlist_id}/tracks", headers=headers, json=data)
     songs = response.json()
-    return "PLAYLIST COMPLETA"!!
+    return "PLAYLIST COMPLETA"
 
 @app.route("/debug")
 def debug():
