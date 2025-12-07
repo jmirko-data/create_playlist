@@ -125,6 +125,12 @@ def add_songs():
         res_json = response.json()
     except:
         return f"Errore Spotify (non JSON): {response.status_code}<br>{response.text}", 400
+    
+    session.pop('access_token', None)
+    session.pop('refresh_token', None)
+    session.pop('expires_at', None)
+    session.pop('playlist_id', None)
+    session.pop('user_data', None)
     return "PLAYLIST COMPLETA, UN BACIO"
 
 @app.route("/debug")
