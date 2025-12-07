@@ -29,7 +29,7 @@ def login():
     "tg_id": tg_id,
     "tracks": tracks_list,
     "token": token
-}
+    }
     
     params = {
         "client_id": CLIENT_ID,
@@ -101,7 +101,7 @@ def add_songs():
     if 'playlist_id' not in session:
         return "Playlist ID not found. Crea prima la playlist.", 400
 
-     if 'tracks' not in session:
+    if 'tracks' not in session:
         return "Tracks non presenti in sessione", 400
     
     headers = {
