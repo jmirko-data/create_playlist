@@ -14,6 +14,8 @@ TOKEN_URL = os.environ.get("TOKEN_URL")
 AUTH_URL = os.environ.get("AUTH_URL")
 API_BASE_URL = os.environ.get("API_BASE_URL")
 
+USER_SESSIONS = {}
+
 @app.route('/')
 def index():
     return redirect('/login')
@@ -25,10 +27,9 @@ def login():
     tracks_list = tracks.split(",")  # ora è una lista Python
     token = request.args.get("token")
 
-    session['user_data'] = {
+    USER_SESSIONS[token] = {
     "tg_id": tg_id,
-    "tracks": tracks_list,
-    "token": token
+    "tracks": tracks_list
     }
     
     params = {
@@ -36,6 +37,7 @@ def login():
         "response_type": "code",
         "redirect_uri": REDIRECT_URI,
         "scope": "playlist-modify-private playlist-modify-public",
+        "state" : token
     }
     auth_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
 
@@ -43,10 +45,14 @@ def login():
 
 @app.route("/callback")
 def callback():
-    if 'error' in request.args:
-        return jsonify({"error": request.args['error']})
+    code = request.args.get("code")
+    state_token = request.args.get("state") 
+    error = request.args.get("error")
     
-    if 'code' in request.args:
+    if error:
+        return jsonify({"error": error})
+    
+    if code:
         req_body = {
             'code': request.args['code'],
             'grant_type': 'authorization_code',
@@ -58,22 +64,27 @@ def callback():
   
         response = requests.post(TOKEN_URL, data=req_body)
         token_info = response.json()
-        session['access_token']= token_info['access_token']
-        session['refresh_token']= token_info['refresh_token']
-        session['expires_at']= datetime.now().timestamp() + token_info['expires_in']
+        USER_SESSIONS[state_token]["access_token"] = token_info['access_token']
+        USER_SESSIONS[state_token]["refresh_token"] = token_info['refresh_token']
+        USER_SESSIONS[state_token]["expires_at"] = datetime.now().timestamp() + token_info['expires_in']
 
-        return redirect('/playlists')
-
+        return redirect(f"/playlists?token={state_token}")
+    else:
+        return "Token non valido o codice mancante", 400
+ 
 @app.route('/playlists')
 def create_playlists():
-    if 'access_token' not in session:
+    token = request.args.get("token")
+    if not token:
+        return redirect('/login')
+
+    user_data = USER_SESSIONS[token]
+    
+    if datetime.now().timestamp() > user_data["expires_at"]:
         return redirect('/login')
     
-    if datetime.now().timestamp() > session['expires_at']:
-        return redirect('/refresh-token')
-    
     headers = {
-        'Authorization':f"Bearer {session['access_token']}",
+        'Authorization':f"Bearer {user_data['access_token']}",
         "Content-Type": "application/json"
     }
 
@@ -85,39 +96,39 @@ def create_playlists():
 
     response = requests.post(API_BASE_URL + 'me/playlists', headers=headers, json=data)
     playlists = response.json()
-    session['playlist_id'] = playlists['id']
+    USER_SESSIONS[token]["playlist_id"] = playlists['id']
 
-    return redirect('/songs')
+    return redirect(f"/songs?token={token}")
 
 
 @app.route('/songs')
 def add_songs():
-    if 'access_token' not in session:
+    token = request.args.get("token")
+    if 'access_token' not in USER_SESSIONS[token]:
         return redirect('/login')
     
-    if datetime.now().timestamp() > session['expires_at']:
-        return redirect('/refresh-token')
+    if datetime.now().timestamp() > USER_SESSIONS[token]["expires_at"]:
+        return redirect('/login')
     
-    if 'playlist_id' not in session:
+    if 'playlist_id' not in USER_SESSIONS[token]:
         return "Playlist ID not found. Crea prima la playlist.", 400
 
-    if 'tracks' not in session:
+    if 'tracks' not in USER_SESSIONS[token]:
         return "Tracks non presenti in sessione", 400
     
     headers = {
-        'Authorization':f"Bearer {session['access_token']}",
+        'Authorization':f"Bearer {USER_SESSIONS[token]['access_token']}",
         "Content-Type": "application/json"
     }
-    
-    user_data = session.get('user_data')
-    songs = user_data['tracks']
+
+    songs = USER_SESSIONS[token]['tracks']
     songs_final = [f"spotify:track:{i}" for i in songs]
         
     data = {
         "uris": songs_final
     }
 
-    playlist_id = session['playlist_id']
+    playlist_id = USER_SESSIONS[token]['playlist_id']
     response = requests.post(f"{API_BASE_URL}playlists/{playlist_id}/tracks", headers=headers, json=data)
     print("STATUS:", response.status_code)
     print("BODY:", response.text)
@@ -125,12 +136,6 @@ def add_songs():
         res_json = response.json()
     except:
         return f"Errore Spotify (non JSON): {response.status_code}<br>{response.text}", 400
-    
-    session.pop('access_token', None)
-    session.pop('refresh_token', None)
-    session.pop('expires_at', None)
-    session.pop('playlist_id', None)
-    session.pop('user_data', None)
     return "PLAYLIST COMPLETA, UN BACIO"
 
 @app.route("/debug")
