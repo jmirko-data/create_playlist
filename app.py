@@ -107,7 +107,7 @@ def add_songs():
         songs_final.append(f"spotify:track:{i}")
         
     data = {
-        "uris": songs_final,
+        "uris": songs_final
     }
 
     playlist_id = session['playlist_id']
