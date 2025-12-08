@@ -67,13 +67,11 @@ def index():
 
 @app.route("/login")
 def login():
-    tg_id = request.args.get("tg_id")
     tracks = request.args.get("songs")  # stringa tipo "7InzmgtRkwsheHlrUz0VLK,4uLU6hMCjMI75M1A2tKUQC"
     tracks_list = tracks.split(",")  # ora è una lista Python
     token = request.args.get("token")
 
     USER_SESSIONS[token] = {
-    "tg_id": tg_id,
     "tracks": tracks_list
     }
     
